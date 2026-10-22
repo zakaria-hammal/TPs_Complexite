@@ -73,10 +73,14 @@ int main(int argc, char *argv[])
         }
     };
 
+    FILE *f_result[5];
+
     long long int *nombres_fixes;
 
     for (int j = 0; j < 4; j++)
     {
+        f_result[j] = fopen("Resultats_exprimentals", "w+");
+        fprintf(f_result[j], "Fichier %d\n", j);
         nombres_fixes = calloc(sizeof(long long int), files[j].nb_nombres);
         for (int i = 0; i < files[j].nb_nombres; i++)
         {
@@ -86,13 +90,14 @@ int main(int argc, char *argv[])
             clock_t fin = clock();
 
             double temps_ms = (double)(fin - debut) * 1000.0 / CLOCKS_PER_SEC;
-            printf("%-15lld | %-10s | %-10.5f\n",
+            fprintf(f_result[j], "%-15lld | %-10s | %-10.5f\n",
                 nombres_fixes[i],
                 premier ? "Oui" : "Non",
                 temps_ms);
         }
 
         fclose(files[j].f);
+        fclose(f_result[j]);
         free(nombres_fixes);
     }
 
