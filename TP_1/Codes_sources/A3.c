@@ -46,7 +46,7 @@ int est_premier(int n)
             i  = i + 1;
         }
     }
-    
+
     return !trouv;
 }
 
