@@ -5,7 +5,12 @@
 
 #define INPUT_COUNT 12
 #define ALGORITHM_COUNT 4
+#define DATASET_COUNT 5
+#define MAX_DATASET_VALUES 1200
 #define MIN_SECONDS 0.05
+#define DATASET_MIN_SECONDS 0.001
+#define A1_DATASET_LIMIT 100000000LL
+#define A2_DATASET_LIMIT 1000000000LL
 
 static volatile int benchmark_sink;
 static volatile long long benchmark_input;
@@ -18,6 +23,10 @@ static const long long inputs[INPUT_COUNT] = {
 
 static const char *algorithm_names[ALGORITHM_COUNT] = {
     "A1", "A2", "A3", "A4"
+};
+
+static const char *dataset_names[DATASET_COUNT] = {
+    "Random100", "Random1000", "Test-1", "Test-2", "Test-3"
 };
 
 static bool is_prime_a1(long long n)
@@ -90,7 +99,7 @@ static double time_batch(int algorithm, long long n, int repetitions)
     return (double)(end - start) / CLOCKS_PER_SEC;
 }
 
-static bool measure_algorithm(int algorithm, long long n,
+static bool measure_algorithm(int algorithm, long long n, double minimum_seconds,
                               double *average_seconds, int *repetitions_used)
 {
     int repetitions = 1;
@@ -98,7 +107,7 @@ static bool measure_algorithm(int algorithm, long long n,
 
     if (elapsed < 0.0) return false;
 
-    while (elapsed < MIN_SECONDS) {
+    while (elapsed < minimum_seconds) {
         if (repetitions > 500000000) return false;
         repetitions *= 2;
         elapsed = time_batch(algorithm, n, repetitions);
@@ -206,6 +215,148 @@ static bool save_results(double times[INPUT_COUNT][ALGORITHM_COUNT],
     return true;
 }
 
+static bool can_measure_dataset_value(int algorithm, long long n)
+{
+    if (algorithm == 0 && n > A1_DATASET_LIMIT) return false;
+    if (algorithm == 1 && n > A2_DATASET_LIMIT) return false;
+    return true;
+}
+
+static bool process_datasets(void)
+{
+    FILE *summary = fopen("results/dataset_summary.csv", "w");
+    FILE *tables = fopen("report/dataset_tables.md", "w");
+
+    if (summary == NULL || tables == NULL) {
+        printf("Impossible de créer les résultats des jeux de données.\n");
+        return false;
+    }
+
+    fprintf(summary, "dataset,value_count");
+    fprintf(tables, "# Résultats des cinq jeux de données\n\n");
+    fprintf(tables, "Les temps sont des moyennes par entrée, mesurées avec des lots d'au moins 1 ms. A1 est limité à N <= %lld et A2 à N <= %lld pour éviter des durées excessives.\n\n",
+            A1_DATASET_LIMIT, A2_DATASET_LIMIT);
+    fprintf(tables, "| Jeu de données | Entrées | A1 (s; testées) | A2 (s; testées) | A3 (s; testées) | A4 (s; testées) |\n");
+    fprintf(tables, "|---|---:|---:|---:|---:|---:|\n");
+
+    for (int algorithm = 0; algorithm < ALGORITHM_COUNT; algorithm++) {
+        fprintf(summary, ",%s_avg_seconds,%s_tested", algorithm_names[algorithm], algorithm_names[algorithm]);
+    }
+    fprintf(summary, "\n");
+
+    for (int d = 0; d < DATASET_COUNT; d++) {
+        char input_name[80];
+        char output_name[100];
+        snprintf(input_name, sizeof(input_name), "data/%s.txt", dataset_names[d]);
+        snprintf(output_name, sizeof(output_name), "results/dataset_%s.csv", dataset_names[d]);
+
+        FILE *input_file = fopen(input_name, "r");
+        FILE *output_file = fopen(output_name, "w");
+        if (input_file == NULL || output_file == NULL) {
+            printf("Impossible d'ouvrir %s ou de créer %s.\n", input_name, output_name);
+            if (input_file != NULL) fclose(input_file);
+            if (output_file != NULL) fclose(output_file);
+            fclose(summary);
+            fclose(tables);
+            return false;
+        }
+
+        fprintf(output_file, "N,A1_seconds,A2_seconds,A3_seconds,A4_seconds,is_prime\n");
+
+        long long values[MAX_DATASET_VALUES];
+        int value_count = 0;
+        long long n;
+        while (fscanf(input_file, "%lld", &n) == 1) {
+            if (value_count == MAX_DATASET_VALUES) {
+                printf("Le jeu %s contient trop de valeurs.\n", dataset_names[d]);
+                fclose(input_file);
+                fclose(output_file);
+                fclose(summary);
+                fclose(tables);
+                return false;
+            }
+            values[value_count++] = n;
+        }
+        fclose(input_file);
+
+        if (value_count == 0) {
+            printf("Le jeu %s est vide ou illisible.\n", dataset_names[d]);
+            fclose(output_file);
+            fclose(summary);
+            fclose(tables);
+            return false;
+        }
+
+        int tested[ALGORITHM_COUNT] = {0, 0, 0, 0};
+        double totals[ALGORITHM_COUNT] = {0, 0, 0, 0};
+
+        for (int i = 0; i < value_count; i++) {
+            bool answer = run_algorithm(3, values[i]);
+            char time_text[ALGORITHM_COUNT][40];
+
+            for (int algorithm = 0; algorithm < ALGORITHM_COUNT; algorithm++) {
+                if (!can_measure_dataset_value(algorithm, values[i])) {
+                    snprintf(time_text[algorithm], sizeof(time_text[algorithm]), "SKIP");
+                    continue;
+                }
+
+                if (run_algorithm(algorithm, values[i]) != answer) {
+                    printf("Désaccord entre algorithmes dans %s, N=%lld.\n",
+                           dataset_names[d], values[i]);
+                    fclose(output_file);
+                    fclose(summary);
+                    fclose(tables);
+                    return false;
+                }
+
+                double seconds;
+                int repetitions;
+                if (!measure_algorithm(algorithm, values[i], DATASET_MIN_SECONDS,
+                                       &seconds, &repetitions)) {
+                    printf("Échec de mesure dans %s, N=%lld.\n",
+                           dataset_names[d], values[i]);
+                    fclose(output_file);
+                    fclose(summary);
+                    fclose(tables);
+                    return false;
+                }
+                (void)repetitions;
+                totals[algorithm] += seconds;
+                tested[algorithm]++;
+                snprintf(time_text[algorithm], sizeof(time_text[algorithm]), "%.12g", seconds);
+            }
+
+            fprintf(output_file, "%lld", values[i]);
+            for (int algorithm = 0; algorithm < ALGORITHM_COUNT; algorithm++) {
+                fprintf(output_file, ",%s", time_text[algorithm]);
+            }
+            fprintf(output_file, ",%s\n", answer ? "true" : "false");
+        }
+
+        fclose(output_file);
+        fprintf(summary, "%s,%d", dataset_names[d], value_count);
+        fprintf(tables, "| %s | %d", dataset_names[d], value_count);
+        for (int algorithm = 0; algorithm < ALGORITHM_COUNT; algorithm++) {
+            if (tested[algorithm] == 0) {
+                fprintf(summary, ",SKIP,0");
+                fprintf(tables, " | SKIP (0/%d)", value_count);
+            } else {
+                double average = totals[algorithm] / tested[algorithm];
+                fprintf(summary, ",%.12g,%d", average, tested[algorithm]);
+                fprintf(tables, " | %.6g (%d/%d)", average,
+                        tested[algorithm], value_count);
+            }
+        }
+        fprintf(summary, "\n");
+        fprintf(tables, " |\n");
+        printf("Jeu %s : %d valeurs traitées.\n", dataset_names[d], value_count);
+    }
+
+    fclose(summary);
+    fclose(tables);
+    return true;
+}
+
 int main(void)
 {
     double times[INPUT_COUNT][ALGORITHM_COUNT];
@@ -223,7 +374,7 @@ int main(void)
         printf("N=%lld est premier;", inputs[i]);
         for (int algorithm = 0; algorithm < ALGORITHM_COUNT; algorithm++) {
             int repetitions;
-            if (!measure_algorithm(algorithm, inputs[i],
+            if (!measure_algorithm(algorithm, inputs[i], MIN_SECONDS,
                                    &times[i][algorithm], &repetitions)) {
                 printf("\nErreur de mesure pour %s.\n",
                        algorithm_names[algorithm]);
@@ -236,6 +387,7 @@ int main(void)
     }
 
     if (!save_results(times, prime)) return 1;
+    if (!process_datasets()) return 1;
     printf("CSV et tableaux générés.\n");
     return 0;
 }

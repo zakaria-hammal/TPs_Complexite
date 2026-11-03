@@ -132,23 +132,48 @@ Le tableau présente le temps moyen d'une exécution en secondes. Les mesures on
 \toprule
 $N$ & A1 (s) & A2 (s) & A3 (s) & A4 (s) & Premier \\
 \midrule
-1\,000\,003 & 0.00206225 & 0.00102945312 & $4.10785\times10^{-6}$ & $2.09772\times10^{-6}$ & Oui \\
-2\,000\,003 & 0.0041866875 & 0.002105125 & $5.82196\times10^{-6}$ & $2.92383\times10^{-6}$ & Oui \\
-4\,000\,037 & 0.00827525 & 0.004115 & $8.31055\times10^{-6}$ & $4.13147\times10^{-6}$ & Oui \\
-8\,000\,009 & 0.0164255 & 0.00822225 & $1.17223\times10^{-5}$ & $5.99933\times10^{-6}$ & Oui \\
-16\,000\,057 & 0.0333235 & 0.0168205 & $1.70190\times10^{-5}$ & $8.95813\times10^{-6}$ & Oui \\
-32\,000\,011 & 0.067646 & 0.034274 & $2.39292\times10^{-5}$ & $1.22368\times10^{-5}$ & Oui \\
-64\,000\,031 & 0.135071 & 0.06657 & $3.33647\times10^{-5}$ & $1.65044\times10^{-5}$ & Oui \\
-128\,000\,003 & 0.26362 & 0.131675 & $4.70781\times10^{-5}$ & $2.34153\times10^{-5}$ & Oui \\
-256\,000\,001 & 0.533476 & 0.268991 & $6.78428\times10^{-5}$ & $3.41064\times10^{-5}$ & Oui \\
-512\,000\,009 & 1.066021 & 0.539549 & $9.41924\times10^{-5}$ & $4.88828\times10^{-5}$ & Oui \\
-1\,024\,000\,009 & 2.183002 & 1.08072 & $1.35635\times10^{-4}$ & $6.71328\times10^{-5}$ & Oui \\
-2\,048\,000\,011 & 4.271582 & 2.149539 & $2.00406\times10^{-4}$ & $9.46484\times10^{-5}$ & Oui \\
+1\,000\,003 & 0.00204690625 & 0.00103382813 & $4.11365\times10^{-6}$ & $2.05325\times10^{-6}$ & Oui \\
+2\,000\,003 & 0.004110625 & 0.00209284375 & $5.80420\times10^{-6}$ & $2.89975\times10^{-6}$ & Oui \\
+4\,000\,037 & 0.00820975 & 0.0041061875 & $8.19116\times10^{-6}$ & $4.11688\times10^{-6}$ & Oui \\
+8\,000\,009 & 0.01637175 & 0.00818475 & $1.16116\times10^{-5}$ & $5.81232\times10^{-6}$ & Oui \\
+16\,000\,057 & 0.033039 & 0.0168735 & $1.63784\times10^{-5}$ & $8.22681\times10^{-6}$ & Oui \\
+32\,000\,011 & 0.066288 & 0.0327485 & $2.32090\times10^{-5}$ & $1.16881\times10^{-5}$ & Oui \\
+64\,000\,031 & 0.135053 & 0.065673 & $3.29048\times10^{-5}$ & $1.63765\times10^{-5}$ & Oui \\
+128\,000\,003 & 0.259705 & 0.132941 & $4.63745\times10^{-5}$ & $2.31960\times10^{-5}$ & Oui \\
+256\,000\,001 & 0.524776 & 0.263725 & $6.55244\times10^{-5}$ & $3.27910\times10^{-5}$ & Oui \\
+512\,000\,009 & 1.05029 & 0.52542 & $9.27969\times10^{-5}$ & $4.64189\times10^{-5}$ & Oui \\
+1\,024\,000\,009 & 2.103033 & 1.053003 & $1.31078\times10^{-4}$ & $6.55166\times10^{-5}$ & Oui \\
+2\,048\,000\,011 & 4.210006 & 2.098886 & $1.85350\times10^{-4}$ & $9.29639\times10^{-5}$ & Oui \\
 \bottomrule
 \end{tabular}
 \caption{Temps d'exécution moyens mesurés pour les quatre algorithmes.}
 \label{tab:temps}
 \end{table}
+
+\subsection{Résultats des cinq jeux de données}
+
+Les cinq fichiers de données sont conservés dans \texttt{data/}. Pour chaque valeur, le programme mesure les algorithmes admissibles avec des lots d'au moins une milliseconde et écrit les résultats détaillés dans \texttt{results/dataset\_NomDuJeu.csv}. Les temps du tableau sont des moyennes par entrée mesurée. A1 est limité aux valeurs $N\leq 10^8$ et A2 aux valeurs $N\leq 10^9$, car leurs durées deviennent excessives au-delà de ces seuils. Les valeurs non mesurées apparaissent comme \texttt{SKIP} dans les CSV. A3 et A4 sont testés sur toutes les entrées.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{l r r r r r}
+\toprule
+Jeu de données & Entrées & A1 (s; testées) & A2 (s; testées) & A3 (s; testées) & A4 (s; testées) \\
+\midrule
+Random100 & 100 & $2.88764\times10^{-5}$ (100/100) & $1.44326\times10^{-5}$ (100/100) & $4.47482\times10^{-7}$ (100/100) & $2.27462\times10^{-7}$ (100/100) \\
+Random1000 & 1000 & $3.13059\times10^{-5}$ (1000/1000) & $1.55560\times10^{-5}$ (1000/1000) & $4.71995\times10^{-7}$ (1000/1000) & $2.38048\times10^{-7}$ (1000/1000) \\
+Test-1 & 100 & $3.41611\times10^{-5}$ (100/100) & $1.70053\times10^{-5}$ (100/100) & $5.09138\times10^{-7}$ (100/100) & $2.57476\times10^{-7}$ (100/100) \\
+Test-2 & 60 & $3.84246\times10^{-3}$ (60/60) & $1.92537\times10^{-3}$ (60/60) & $3.28166\times10^{-6}$ (60/60) & $1.63896\times10^{-6}$ (60/60) \\
+Test-3 & 20 & $6.26041\times10^{-8}$ (10/20) & $2.90504\times10^{-8}$ (15/20) & $7.93755\times10^{-5}$ (20/20) & $3.23623\times10^{-5}$ (20/20) \\
+\bottomrule
+\end{tabular}}
+\caption{Temps moyens par entrée pour les cinq jeux de données. Le nombre entre parenthèses indique les entrées mesurées sur le total.}
+\label{tab:jeux}
+\end{table}
+
+Les algorithmes peuvent s'arrêter tôt lorsqu'une entrée est composée. Les moyennes reflètent donc le contenu réel des jeux, et non uniquement le pire cas. Pour Test-3, A1 n'est chronométré que sur 10 entrées et A2 sur 15; leurs moyennes ne couvrent pas exactement le même sous-ensemble que celles de A3 et A4.
 
 \subsection{Proxys du travail théorique}
 
@@ -285,8 +310,48 @@ Les graphiques expérimentaux représentent les temps mesurés. Les graphiques t
 \caption{Comparaison expérimentale des quatre algorithmes.}
 \end{figure}
 
+\subsection{Graphiques des cinq jeux de données}
+
+Les figures suivantes comparent les temps mesurés pour les entrées de chaque jeu. Les points \texttt{SKIP} ne sont pas tracés.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{datasets_comparison.png}
+\caption{Temps moyens par entrée mesurée, regroupés par jeu de données.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{datasets_Random100.png}
+\caption{Comparaison des algorithmes sur Random100.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{datasets_Random1000.png}
+\caption{Comparaison des algorithmes sur Random1000.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{datasets_Test-1.png}
+\caption{Comparaison des algorithmes sur Test-1.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{datasets_Test-2.png}
+\caption{Comparaison des algorithmes sur Test-2.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{datasets_Test-3.png}
+\caption{Comparaison des algorithmes sur Test-3.}
+\end{figure}
+
 \section{Conclusion}
 
-Les mesures confirment l'intérêt des améliorations successives. A2 réduit le temps par un facteur constant sans changer la complexité linéaire. A3 obtient une amélioration asymptotique en limitant les tests à $\sqrt{N}$. A4 conserve cette complexité et réduit encore le travail sur les entrées impaires en ignorant les diviseurs pairs. Pour les douze nombres testés, A4 est le plus rapide en pratique, tandis que les quatre algorithmes concluent correctement que les entrées sont premières.
+Les mesures des douze valeurs du sujet et des cinq jeux de données confirment l'intérêt des améliorations successives. A2 réduit le temps par un facteur constant sans changer la complexité linéaire. A3 obtient une amélioration asymptotique en limitant les tests à $\sqrt{N}$. A4 conserve cette complexité et réduit encore le travail sur les entrées impaires en ignorant les diviseurs pairs. Les résultats détaillés indiquent aussi les valeurs écartées pour A1 et A2 dans Test-3 en raison de leur coût excessif.
 
 \end{document}

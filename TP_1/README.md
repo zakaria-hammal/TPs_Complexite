@@ -1,14 +1,34 @@
 # TP1 — Guide d’utilisation
 
-Ce TP compare quatre algorithmes de test de primalité. Les commandes ci-dessous sont à exécuter depuis le dossier `TP_1`.
+Ce TP compare quatre algorithmes de primalité sur les 12 nombres du sujet et sur cinq jeux de données. Exécutez les commandes depuis le dossier `TP_1`.
 
-## Prérequis
+## 1. Préparer les données
+
+Avant de lancer le programme, créez le dossier `data/` à la racine de `TP_1` et placez-y les cinq fichiers suivants :
+
+```text
+TP_1/
+└── data/
+    ├── Random100.txt
+    ├── Random1000.txt
+    ├── Test-1.txt
+    ├── Test-2.txt
+    └── Test-3.txt
+```
+
+Chaque fichier doit contenir un entier par ligne. Gardez exactement ces noms : le runner les ouvre directement depuis `data/`. Si vos fichiers portent d’autres noms, modifiez la liste `dataset_names` dans `Codes_sources/tp1_runner.c` pour qu’elle corresponde aux noms de fichiers, sans l’extension `.txt`.
+
+Les 12 nombres fixes du sujet sont déjà dans le programme : les fichiers de données ne les remplacent pas. Le runner teste les deux groupes.
+
+## 2. Prérequis
 
 - **Linux :** GCC, Python 3 et pip.
 - **Windows :** GCC (par exemple MinGW-w64) ajouté au `PATH`, Python 3 et pip.
-- Python utilise Matplotlib, installé avec `requirements.txt`.
+- Matplotlib, installé avec `requirements.txt`.
 
-## Linux
+## 3. Compiler, tester et générer les graphiques
+
+### Linux
 
 ```sh
 gcc -std=c11 -O2 -Wall -Wextra -Wpedantic Codes_sources/tp1_runner.c -lm -o tp1_runner
@@ -17,7 +37,7 @@ python3 -m pip install -r requirements.txt
 python3 scripts/generate_graphs.py
 ```
 
-## Windows (PowerShell)
+### Windows (PowerShell)
 
 ```powershell
 gcc -std=c11 -O2 -Wall -Wextra -Wpedantic Codes_sources/tp1_runner.c -lm -o tp1_runner.exe
@@ -26,14 +46,15 @@ py -m pip install -r requirements.txt
 py scripts\generate_graphs.py
 ```
 
-Si la commande `py` n’est pas disponible, utilisez `python` à sa place.
+Si `py` n’est pas disponible, remplacez-le par `python`.
 
-## Résultats
+Le programme mesure les 12 nombres fixes avec les quatre algorithmes. Il teste aussi les nombres de chacun des cinq fichiers et écrit un CSV détaillé par jeu de données. Pour éviter des temps d’attente excessifs, A1 n’est pas chronométré au-delà de `N = 100000000` et A2 au-delà de `N = 1000000000`; ces cases sont notées `SKIP`. A3 et A4 sont chronométrés sur toutes les entrées.
 
-- `results/` : tableaux CSV des mesures et du travail théorique.
-- `graphs/` : 11 graphiques PNG.
-- `report/timing_tables.md` : tableaux lisibles des résultats.
-- `report/reponses.md` : réponses et analyse en français.
-- `report/main.tex` : rapport complet en LaTeX. Pour produire le PDF, compilez-le avec LaTeX depuis le dossier `report` (par exemple `pdflatex main.tex`).
+## 4. Fichiers produits
 
-Le programme mesure les 12 nombres du sujet. Les tests rapides sont répétés jusqu’à ce que leur durée totale atteigne au moins 50 ms, puis le temps moyen est enregistré. Les fichiers `Codes_sources/A1.c` à `A4.c` sont conservés tels quels ; le programme utilisé pour les mesures est `Codes_sources/tp1_runner.c`.
+- `results/` : CSV des 12 nombres fixes et des cinq jeux de données.
+- `report/timing_tables.md` et `report/dataset_tables.md` : tableaux lisibles des résultats.
+- `graphs/` : 17 graphiques PNG.
+- `report/main.tex` : rapport complet en français. Pour produire le PDF, compilez-le depuis `report/` avec `pdflatex main.tex`.
+
+Les fichiers `Codes_sources/A1.c` à `A4.c` sont conservés tels quels. Le programme de mesure est `Codes_sources/tp1_runner.c`.
