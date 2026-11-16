@@ -1,0 +1,146 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#define NP_FIXE 50
+#define DUREE_MIN 0.2   // on repete la recherche jusqu'a 0.2 s puis on moyenne
+
+static int taille_depuis_nom(const char *path)
+{
+    const char *base = strrchr(path, '/');
+    base = base ? base + 1 : path;
+    const char *d = strpbrk(base, "0123456789");
+    return d ? atoi(d) : 0;
+}
+
+static int *lire_matrice(const char *path, int n)
+{
+    FILE *f = fopen(path, "r");
+    if (!f) return NULL;
+    size_t total = (size_t)n * n;
+    int *M = malloc(total * sizeof(int));
+    if (M)
+        for (size_t k = 0; k < total; k++)
+            if (fscanf(f, "%d", &M[k]) != 1) { free(M); M = NULL; break; }
+    fclose(f);
+    return M;
+}
+
+
+static int correspond(const int *A, int m, const int *B, int np, int mp,
+                      int i, int j)
+{
+    for (int r = 0; r < np; r++) {
+        const int *a = &A[(size_t)(i + r) * m + j];
+        const int *b = &B[(size_t)r * mp];
+        for (int c = 0; c < mp; c++)
+            if (a[c] != b[c]) return 0;
+    }
+    return 1;
+}
+
+int sousMat1(const int *A, int n, int m, const int *B, int np, int mp,
+             int *pi, int *pj)
+{
+    for (int i = 0; i <= n - np; i++)
+        for (int j = 0; j <= m - mp; j++)
+            if (correspond(A, m, B, np, mp, i, j)) {
+                *pi = i; *pj = j;
+                return 1;
+            }
+    return 0;
+}
+
+// plus petit k tel que row[k] >= x (m si aucun) : recherche dichotomique 
+static int borne_inf(const int *row, int m, int x)
+{
+    int lo = 0, hi = m;
+    while (lo < hi) {
+        int mid = lo + (hi - lo) / 2;
+        if (row[mid] < x) lo = mid + 1; else hi = mid;
+    }
+    return lo;
+}
+
+int sousMat2(const int *A, int n, int m, const int *B, int np, int mp,
+             int *pi, int *pj)
+{
+    int v = B[0];                               /* B[0][0] */
+    for (int i = 0; i <= n - np; i++) {
+        const int *row = &A[(size_t)i * m];
+        for (int j = borne_inf(row, m, v); j <= m - mp && row[j] == v; j++)
+            if (correspond(A, m, B, np, mp, i, j)) {
+                *pi = i; *pj = j;
+                return 1;
+            }
+    }
+    return 0;
+}
+
+// mesure le temps moyen d'une recherche (repetee pour avoir une duree mesurable)
+static void mesurer(int algo, const int *A, int n, const int *B, int np, int mp)
+{
+    int (*f)(const int *, int, int, const int *, int, int, int *, int *) =
+        (algo == 1) ? sousMat1 : sousMat2;
+    int trouve = 0, pi = -1, pj = -1;
+    long reps = 0;
+    clock_t t0 = clock();
+    double ecoule;
+    do {
+        trouve = f(A, n, n, B, np, mp, &pi, &pj);
+        reps++;
+        ecoule = (double)(clock() - t0) / CLOCKS_PER_SEC;
+    } while (ecoule < DUREE_MIN);
+    printf("sousMat%d,%d,%d,%d,%d,%d,%.9f\n", algo, n, n, np, mp, trouve,
+           ecoule / reps);
+    fflush(stdout);
+}
+
+/* copie la sous-matrice np x mp du coin bas-droit de A */
+static int *extraire_B(const int *A, int n, int np, int mp)
+{
+    int *B = malloc((size_t)np * mp * sizeof(int));
+    if (!B) return NULL;
+    for (int r = 0; r < np; r++)
+        memcpy(&B[(size_t)r * mp], &A[(size_t)(n - np + r) * n + (n - mp)],
+               mp * sizeof(int));
+    return B;
+}
+
+int main(int argc, char *argv[])
+{
+    if (argc < 4 || (strcmp(argv[1], "n") && strcmp(argv[1], "np")) ||
+        (strcmp(argv[2], "1") && strcmp(argv[2], "2"))) {
+        fprintf(stderr, "Usage : %s n|np 1|2 fichier [fichier ...]\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+    int variable_n = (strcmp(argv[1], "n") == 0);
+    int algo = atoi(argv[2]);
+
+    printf("algo,n,m,np,mp,trouve,temps_s\n");
+
+    for (int a = 3; a < argc; a++) {
+        int n = taille_depuis_nom(argv[a]);
+        int *A = (n > 0) ? lire_matrice(argv[a], n) : NULL;
+        if (!A) { fprintf(stderr, "Erreur avec %s\n", argv[a]); continue; }
+
+        if (variable_n) {
+            if (NP_FIXE < n) {
+                int *B = extraire_B(A, n, NP_FIXE, NP_FIXE);
+                mesurer(algo, A, n, B, NP_FIXE, NP_FIXE);
+                free(B);
+            }
+        } else {
+            for (int k = 1; k <= 9; k++) {
+                int np = n * k / 10;
+                if (np < 1) continue;
+                int *B = extraire_B(A, n, np, np);
+                mesurer(algo, A, n, B, np, np);
+                free(B);
+            }
+        }
+        free(A);
+    }
+    return EXIT_SUCCESS;
+}
