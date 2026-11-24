@@ -4,7 +4,8 @@
 #include <time.h>
 
 #define NP_FIXE 50
-#define DUREE_MIN 0.2   // on repete la recherche jusqu'a 0.2s puis on moyenne
+#define DUREE_MIN 0.2   
+
 static int dims_depuis_nom(const char *path, int *n, int *m)
 {
     const char *base = path, *p;
@@ -53,7 +54,6 @@ int sousMat1(const int *A, int n, int m, const int *B, int np, int mp,
     return 0;
 }
 
-// plus petit k tel que row[k] >= x (m si aucun) : recherche dichotomique
 static int borne_inf(const int *row, int m, int x)
 {
     int lo = 0, hi = m;
@@ -67,7 +67,7 @@ static int borne_inf(const int *row, int m, int x)
 int sousMat2(const int *A, int n, int m, const int *B, int np, int mp,
              int *pi, int *pj)
 {
-    int v = B[0]; 
+    int v = B[0];                          
     for (int i = 0; i <= n - np; i++) {
         const int *row = &A[(size_t)i * m];
         for (int j = borne_inf(row, m, v); j <= m - mp && row[j] == v; j++)
@@ -79,7 +79,6 @@ int sousMat2(const int *A, int n, int m, const int *B, int np, int mp,
     return 0;
 }
 
-// mesure le temps moyen d'une recherche (repetee pour avoir une duree mesurable)
 static void mesurer(int algo, const int *A, int n, int m, const int *B, int np, int mp)
 {
     int (*f)(const int *, int, int, const int *, int, int, int *, int *) =
@@ -98,7 +97,6 @@ static void mesurer(int algo, const int *A, int n, int m, const int *B, int np, 
     fflush(stdout);
 }
 
-// copie la sous-matrice np x mp du coin bas-droit de A (n x m)
 static int *extraire_B(const int *A, int n, int m, int np, int mp)
 {
     int *B = malloc((size_t)np * mp * sizeof(int));
@@ -109,17 +107,45 @@ static int *extraire_B(const int *A, int n, int m, int np, int mp)
     return B;
 }
 
+static void pire_cas(int algo, int n, int m, int np, int mp)
+{
+    int *A = calloc((size_t)n * m, sizeof(int));
+    int *B = calloc((size_t)np * mp, sizeof(int));
+    if (!A || !B) { fprintf(stderr, "Memoire insuffisante\n"); free(A); free(B); return; }
+    B[(size_t)np * mp - 1] = 1;
+    mesurer(algo, A, n, m, B, np, mp);
+    free(A); free(B);
+}
+
 int main(int argc, char *argv[])
 {
-    if (argc < 4 || (strcmp(argv[1], "n") && strcmp(argv[1], "np")) ||
-        (strcmp(argv[2], "1") && strcmp(argv[2], "2"))) {
-        fprintf(stderr, "Usage : %s n|np 1|2 fichier [fichier ...]\n", argv[0]);
+    int ok = argc >= 4 && (!strcmp(argv[1], "n") || !strcmp(argv[1], "np") ||
+                           !strcmp(argv[1], "pire") || !strcmp(argv[1], "pirenp")) &&
+             (!strcmp(argv[2], "1") || !strcmp(argv[2], "2"));
+    if (!ok) {
+        fprintf(stderr, "Usage : %s n|np 1|2 fichier [fichier ...]\n"
+                        "        %s pire 1|2 n [n ...]\n"
+                        "        %s pirenp 1|2 n\n", argv[0], argv[0], argv[0]);
         return EXIT_FAILURE;
     }
     int variable_n = (strcmp(argv[1], "n") == 0);
     int algo = atoi(argv[2]);
 
     printf("algo,n,m,np,mp,trouve,temps_s\n");
+
+    if (!strcmp(argv[1], "pire")) {         
+        for (int a = 3; a < argc; a++) {
+            int n = atoi(argv[a]);
+            if (n >= 2) pire_cas(algo, n, n, n / 2, n / 2);
+        }
+        return EXIT_SUCCESS;
+    }
+    if (!strcmp(argv[1], "pirenp")) {          
+        int n = atoi(argv[3]);
+        for (int k = 1; k <= 9; k++)
+            if (n * k / 10 >= 1) pire_cas(algo, n, n, n * k / 10, n * k / 10);
+        return EXIT_SUCCESS;
+    }
 
     for (int a = 3; a < argc; a++) {
         int n = 0, m = 0;
