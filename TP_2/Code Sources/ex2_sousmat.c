@@ -9,12 +9,14 @@
 static int dims_depuis_nom(const char *path, int *n, int *m)
 {
     const char *base = path, *p;
-    for (p = path; *p; p++)
+    for (p = path; *p; p++){
         if (*p == '/' || *p == '\\') base = p + 1;
-    for (p = base; *p; p++)
+    }
+    for (p = base; *p; p++){
         if (*p >= '0' && *p <= '9' && (p == base || p[-1] < '0' || p[-1] > '9'))
             if (sscanf(p, "%dx%d", n, m) == 2) return 1;
-    return 0;
+    }
+            return 0;
 }
 
 static int *lire_matrice(const char *path, int n, int m)
@@ -23,9 +25,10 @@ static int *lire_matrice(const char *path, int n, int m)
     if (!f) return NULL;
     size_t total = (size_t)n * m;
     int *M = malloc(total * sizeof(int));
-    if (M)
-        for (size_t k = 0; k < total; k++)
-            if (fscanf(f, "%d", &M[k]) != 1) { free(M); M = NULL; break; }
+    if (M){
+        for (size_t k = 0; k < total; k++){
+            if (fscanf(f, "%d", &M[k]) != 1) { free(M); M = NULL; break; }}
+    }
     fclose(f);
     return M;
 }
@@ -36,8 +39,9 @@ static int correspond(const int *A, int m, const int *B, int np, int mp,
     for (int r = 0; r < np; r++) {
         const int *a = &A[(size_t)(i + r) * m + j];
         const int *b = &B[(size_t)r * mp];
-        for (int c = 0; c < mp; c++)
+        for (int c = 0; c < mp; c++){
             if (a[c] != b[c]) return 0;
+        }
     }
     return 1;
 }
@@ -45,12 +49,14 @@ static int correspond(const int *A, int m, const int *B, int np, int mp,
 int sousMat1(const int *A, int n, int m, const int *B, int np, int mp,
              int *pi, int *pj)
 {
-    for (int i = 0; i <= n - np; i++)
-        for (int j = 0; j <= m - mp; j++)
+    for (int i = 0; i <= n - np; i++){
+        for (int j = 0; j <= m - mp; j++){
             if (correspond(A, m, B, np, mp, i, j)) {
                 *pi = i; *pj = j;
                 return 1;
             }
+        }
+    }
     return 0;
 }
 
@@ -70,11 +76,12 @@ int sousMat2(const int *A, int n, int m, const int *B, int np, int mp,
     int v = B[0];                          
     for (int i = 0; i <= n - np; i++) {
         const int *row = &A[(size_t)i * m];
-        for (int j = borne_inf(row, m, v); j <= m - mp && row[j] == v; j++)
+        for (int j = borne_inf(row, m, v); j <= m - mp && row[j] == v; j++){
             if (correspond(A, m, B, np, mp, i, j)) {
                 *pi = i; *pj = j;
                 return 1;
             }
+        }
     }
     return 0;
 }
@@ -101,9 +108,10 @@ static int *extraire_B(const int *A, int n, int m, int np, int mp)
 {
     int *B = malloc((size_t)np * mp * sizeof(int));
     if (!B) return NULL;
-    for (int r = 0; r < np; r++)
+    for (int r = 0; r < np; r++){
         memcpy(&B[(size_t)r * mp], &A[(size_t)(n - np + r) * m + (m - mp)],
                mp * sizeof(int));
+    }
     return B;
 }
 
