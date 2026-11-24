@@ -3,15 +3,18 @@
 #include <string.h>
 #include <time.h>
 
-static int taille_depuis_nom(const char *path)
+static int dims_depuis_nom(const char *path, int *n, int *m)
 {
-    const char *base = strrchr(path, '/');
-    base = base ? base + 1 : path;
-    const char *d = strpbrk(base, "0123456789");
-    return d ? atoi(d) : 0;
+    const char *base = path, *p;
+    for (p = path; *p; p++)
+        if (*p == '/' || *p == '\\') base = p + 1;
+    for (p = base; *p; p++)
+        if (*p >= '0' && *p <= '9' && (p == base || p[-1] < '0' || p[-1] > '9'))
+            if (sscanf(p, "%dx%d", n, m) == 2) return 1;
+    return 0;
 }
 
- // lit une matrice n x n stockee ligne par ligne dans un tableau 1D 
+// lit une matrice n x n stockee ligne par ligne dans un tableau 1D 
 static int *lire_matrice(const char *path, int n)
 {
     FILE *f = fopen(path, "r");
@@ -24,7 +27,6 @@ static int *lire_matrice(const char *path, int n)
     fclose(f);
     return M;
 }
-
 
 static void produit(const int *A, const int *B, unsigned long long *C,
                     int n, int m, int p)
@@ -49,8 +51,12 @@ int main(int argc, char *argv[])
     printf("n,temps_s,checksum\n");
 
     for (int a = 1; a < argc; a++) {
-        int n = taille_depuis_nom(argv[a]);
-        int *A = (n > 0) ? lire_matrice(argv[a], n) : NULL;
+        int n = 0, m = 0;
+        if (!dims_depuis_nom(argv[a], &n, &m) || n != m) {
+            fprintf(stderr, "Ignore %s (matrice carree NxN attendue)\n", argv[a]);
+            continue;
+        }
+        int *A = lire_matrice(argv[a], n);
         unsigned long long *C = A ? malloc((size_t)n * n * sizeof(*C)) : NULL;
         if (!A || !C) {
             fprintf(stderr, "Erreur avec %s\n", argv[a]);
@@ -59,7 +65,7 @@ int main(int argc, char *argv[])
         }
 
         clock_t t0 = clock();
-        produit(A, A, C, n, n, n);        
+        produit(A, A, C, n, n, n);          // B = A
         double t = (double)(clock() - t0) / CLOCKS_PER_SEC;
 
         // checksum : empeche le compilateur de supprimer le calcul

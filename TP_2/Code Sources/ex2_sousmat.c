@@ -4,21 +4,23 @@
 #include <time.h>
 
 #define NP_FIXE 50
-#define DUREE_MIN 0.2   // on repete la recherche jusqu'a 0.2 s puis on moyenne
-
-static int taille_depuis_nom(const char *path)
+#define DUREE_MIN 0.2   // on repete la recherche jusqu'a 0.2s puis on moyenne
+static int dims_depuis_nom(const char *path, int *n, int *m)
 {
-    const char *base = strrchr(path, '/');
-    base = base ? base + 1 : path;
-    const char *d = strpbrk(base, "0123456789");
-    return d ? atoi(d) : 0;
+    const char *base = path, *p;
+    for (p = path; *p; p++)
+        if (*p == '/' || *p == '\\') base = p + 1;
+    for (p = base; *p; p++)
+        if (*p >= '0' && *p <= '9' && (p == base || p[-1] < '0' || p[-1] > '9'))
+            if (sscanf(p, "%dx%d", n, m) == 2) return 1;
+    return 0;
 }
 
-static int *lire_matrice(const char *path, int n)
+static int *lire_matrice(const char *path, int n, int m)
 {
     FILE *f = fopen(path, "r");
     if (!f) return NULL;
-    size_t total = (size_t)n * n;
+    size_t total = (size_t)n * m;
     int *M = malloc(total * sizeof(int));
     if (M)
         for (size_t k = 0; k < total; k++)
@@ -26,7 +28,6 @@ static int *lire_matrice(const char *path, int n)
     fclose(f);
     return M;
 }
-
 
 static int correspond(const int *A, int m, const int *B, int np, int mp,
                       int i, int j)
@@ -52,7 +53,7 @@ int sousMat1(const int *A, int n, int m, const int *B, int np, int mp,
     return 0;
 }
 
-// plus petit k tel que row[k] >= x (m si aucun) : recherche dichotomique 
+// plus petit k tel que row[k] >= x (m si aucun) : recherche dichotomique
 static int borne_inf(const int *row, int m, int x)
 {
     int lo = 0, hi = m;
@@ -66,7 +67,7 @@ static int borne_inf(const int *row, int m, int x)
 int sousMat2(const int *A, int n, int m, const int *B, int np, int mp,
              int *pi, int *pj)
 {
-    int v = B[0];                               /* B[0][0] */
+    int v = B[0]; 
     for (int i = 0; i <= n - np; i++) {
         const int *row = &A[(size_t)i * m];
         for (int j = borne_inf(row, m, v); j <= m - mp && row[j] == v; j++)
@@ -79,7 +80,7 @@ int sousMat2(const int *A, int n, int m, const int *B, int np, int mp,
 }
 
 // mesure le temps moyen d'une recherche (repetee pour avoir une duree mesurable)
-static void mesurer(int algo, const int *A, int n, const int *B, int np, int mp)
+static void mesurer(int algo, const int *A, int n, int m, const int *B, int np, int mp)
 {
     int (*f)(const int *, int, int, const int *, int, int, int *, int *) =
         (algo == 1) ? sousMat1 : sousMat2;
@@ -88,22 +89,22 @@ static void mesurer(int algo, const int *A, int n, const int *B, int np, int mp)
     clock_t t0 = clock();
     double ecoule;
     do {
-        trouve = f(A, n, n, B, np, mp, &pi, &pj);
+        trouve = f(A, n, m, B, np, mp, &pi, &pj);
         reps++;
         ecoule = (double)(clock() - t0) / CLOCKS_PER_SEC;
     } while (ecoule < DUREE_MIN);
-    printf("sousMat%d,%d,%d,%d,%d,%d,%.9f\n", algo, n, n, np, mp, trouve,
+    printf("sousMat%d,%d,%d,%d,%d,%d,%.9f\n", algo, n, m, np, mp, trouve,
            ecoule / reps);
     fflush(stdout);
 }
 
-/* copie la sous-matrice np x mp du coin bas-droit de A */
-static int *extraire_B(const int *A, int n, int np, int mp)
+// copie la sous-matrice np x mp du coin bas-droit de A (n x m)
+static int *extraire_B(const int *A, int n, int m, int np, int mp)
 {
     int *B = malloc((size_t)np * mp * sizeof(int));
     if (!B) return NULL;
     for (int r = 0; r < np; r++)
-        memcpy(&B[(size_t)r * mp], &A[(size_t)(n - np + r) * n + (n - mp)],
+        memcpy(&B[(size_t)r * mp], &A[(size_t)(n - np + r) * m + (m - mp)],
                mp * sizeof(int));
     return B;
 }
@@ -121,22 +122,23 @@ int main(int argc, char *argv[])
     printf("algo,n,m,np,mp,trouve,temps_s\n");
 
     for (int a = 3; a < argc; a++) {
-        int n = taille_depuis_nom(argv[a]);
-        int *A = (n > 0) ? lire_matrice(argv[a], n) : NULL;
+        int n = 0, m = 0;
+        int *A = NULL;
+        if (dims_depuis_nom(argv[a], &n, &m)) A = lire_matrice(argv[a], n, m);
         if (!A) { fprintf(stderr, "Erreur avec %s\n", argv[a]); continue; }
 
         if (variable_n) {
-            if (NP_FIXE < n) {
-                int *B = extraire_B(A, n, NP_FIXE, NP_FIXE);
-                mesurer(algo, A, n, B, NP_FIXE, NP_FIXE);
+            if (NP_FIXE < n && NP_FIXE < m) {
+                int *B = extraire_B(A, n, m, NP_FIXE, NP_FIXE);
+                mesurer(algo, A, n, m, B, NP_FIXE, NP_FIXE);
                 free(B);
             }
         } else {
             for (int k = 1; k <= 9; k++) {
-                int np = n * k / 10;
-                if (np < 1) continue;
-                int *B = extraire_B(A, n, np, np);
-                mesurer(algo, A, n, B, np, np);
+                int np = n * k / 10, mp = m * k / 10;
+                if (np < 1 || mp < 1) continue;
+                int *B = extraire_B(A, n, m, np, mp);
+                mesurer(algo, A, n, m, B, np, mp);
                 free(B);
             }
         }
