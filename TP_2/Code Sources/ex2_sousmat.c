@@ -6,7 +6,7 @@
 #define NP_FIXE 50
 #define DUREE_MIN 0.2   
 
-static int dims_depuis_nom(const char *path, int *n, int *m)
+int dims_depuis_nom(const char *path, int *n, int *m)
 {
     const char *base = path, *p;
     for (p = path; *p; p++){
@@ -19,7 +19,7 @@ static int dims_depuis_nom(const char *path, int *n, int *m)
             return 0;
 }
 
-static int *lire_matrice(const char *path, int n, int m)
+int *lire_matrice(const char *path, int n, int m)
 {
     FILE *f = fopen(path, "r");
     if (!f) return NULL;
@@ -33,7 +33,7 @@ static int *lire_matrice(const char *path, int n, int m)
     return M;
 }
 
-static int correspond(const int *A, int m, const int *B, int np, int mp,
+int correspond(const int *A, int m, const int *B, int np, int mp,
                       int i, int j)
 {
     for (int r = 0; r < np; r++) {
@@ -59,8 +59,7 @@ int sousMat1(const int *A, int n, int m, const int *B, int np, int mp,
     }
     return 0;
 }
-
-static int borne_inf(const int *row, int m, int x)
+int borne_inf(const int *row, int m, int x)
 {
     int lo = 0, hi = m;
     while (lo < hi) {
@@ -86,7 +85,7 @@ int sousMat2(const int *A, int n, int m, const int *B, int np, int mp,
     return 0;
 }
 
-static void mesurer(int algo, const int *A, int n, int m, const int *B, int np, int mp)
+void mesurer(int algo, const int *A, int n, int m, const int *B, int np, int mp)
 {
     int (*f)(const int *, int, int, const int *, int, int, int *, int *) =
         (algo == 1) ? sousMat1 : sousMat2;
@@ -104,7 +103,7 @@ static void mesurer(int algo, const int *A, int n, int m, const int *B, int np, 
     fflush(stdout);
 }
 
-static int *extraire_B(const int *A, int n, int m, int np, int mp)
+int *extraire_B(const int *A, int n, int m, int np, int mp)
 {
     int *B = malloc((size_t)np * mp * sizeof(int));
     if (!B) return NULL;
@@ -115,7 +114,7 @@ static int *extraire_B(const int *A, int n, int m, int np, int mp)
     return B;
 }
 
-static void pire_cas(int algo, int n, int m, int np, int mp)
+void pire_cas(int algo, int n, int m, int np, int mp)
 {
     int *A = calloc((size_t)n * m, sizeof(int));
     int *B = calloc((size_t)np * mp, sizeof(int));
