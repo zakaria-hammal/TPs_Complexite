@@ -2,16 +2,14 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
-os.makedirs("Graphiques", exist_ok=True)
+os.makedirs("Graphs", exist_ok=True)
 
 
-# exercice 1 : comparaison mesure experimentale et courbe theorique O(n^3)
 def graphe_exercice1():
     df = pd.read_csv("Csv files/ex1.csv").sort_values(by="n")
     n = df["n"].values
     temps = df["temps_s"].values
 
-    # ajustement du facteur pour O(n^3)
     theorique = (temps[-1] / (n[-1] ** 3)) * (n ** 3)
 
     plt.figure(figsize=(9, 6))
@@ -27,7 +25,6 @@ def graphe_exercice1():
     plt.close()
 
 
-# exercice 2 : comparaison de sousMat1 et sousMat2 selon n (np fixe a 50)
 def graphe_exercice2_variation_n():
     df1 = pd.read_csv("Csv files/ex2_s1_n.csv").sort_values(by="n")
     df2 = pd.read_csv("Csv files/ex2_s2_n.csv").sort_values(by="n")
@@ -45,7 +42,6 @@ def graphe_exercice2_variation_n():
     plt.close()
 
 
-# exercice 2 : comparaison de sousMat1 et sousMat2 selon np (taille sous-matrice)
 def graphe_exercice2_variation_np():
     df1 = pd.read_csv("Csv files/ex2_s1_np.csv").sort_values(by="np")
     df2 = pd.read_csv("Csv files/ex2_s2_np.csv").sort_values(by="np")

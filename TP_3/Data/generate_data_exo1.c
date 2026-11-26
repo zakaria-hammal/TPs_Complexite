@@ -5,6 +5,7 @@
 int main(int argc, char *argv[])
 {
     int n;
+    long long s;
     char filename[100];
 
     srand(time(NULL));
@@ -13,15 +14,16 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i < 10; i++)
     {
-        n = rand() % 1900 + 100;
+        n = 100 + (int)((((unsigned long long)rand() << 15) ^ rand()) % 9901);
+        
         sprintf(filename, "data_%dx%d.txt", n, n);
         f = fopen(filename, "w+");
 
-        int s = n * n;
+        s = (long long)n * n;
 
-        for (int i = 0; i < s; i++)
+        for (long long i = 0; i < s; i++)
         {
-            fprintf(f, "%d\n", rand());
+            fprintf(f, "%d\n", (int)((((unsigned long long)rand() << 15) ^ rand()) & 0x7FFFFFFF));
         }
         
         fclose(f);
